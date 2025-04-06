@@ -15,7 +15,7 @@ function App() {
         <Route path="/" element={<Homepage />} />
         <Route path="/login" element={<LoginForm />} />
         <Route path="/create-account" element={<CreateAccount />} />
-        <Route path="/profile" element={<ProfilePage name='johndoe' email='johndoe@gmail.com' />} />
+        <Route path="/profile/:id" element={<ProfilePage />} />
       </Routes>
     </Router>
 

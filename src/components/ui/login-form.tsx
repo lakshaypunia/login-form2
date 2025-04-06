@@ -5,6 +5,11 @@ import { useMutation } from 'react-query';
 import { z } from "zod"
 import axios from 'axios';
 import FloatingLabelInput from "./input";
+import { useNavigate } from "react-router-dom";
+import Notification from "./notificatoin";
+import { useEffect, useState } from "react";
+const backendUrl = import.meta.env.VITE_Backend_URL;
+
 
 const loginSchema = z.object({
   email: z.string().min(1, "User ID is required"),
@@ -15,6 +20,9 @@ type LoginFormValues = z.infer<typeof loginSchema>
 
 const LoginForm : React.FC = () => {
 
+  const navigate = useNavigate()
+
+
   const {register,handleSubmit,formState: { errors,isValid },reset} = useForm<LoginFormValues>({
         resolver: zodResolver(loginSchema),
         mode: "onChange",
@@ -24,6 +32,13 @@ const LoginForm : React.FC = () => {
         },
     })
 
+    const [notification, setNotification] = useState<{ message: string, success:boolean, visible: boolean }>({
+      message : '',
+      success : true ,
+      visible: false,
+    });
+
+
 
    
 
@@ -31,7 +46,7 @@ const LoginForm : React.FC = () => {
     const submitLogin = async (loginData: LoginFormValues) => {
       try {
         console.log("request is sent")
-        const response = await axios.post('http://localhost:3001/api/auth/register', loginData);
+        const response = await axios.post(`${backendUrl}api/auth/signin`, loginData);
         return response.data; 
       } catch (error) {
         throw new Error("Login failed, please try again.");
@@ -41,13 +56,27 @@ const LoginForm : React.FC = () => {
 
     const { mutate, isLoading } = useMutation(submitLogin, {
       onSuccess: (data) => {
-        localStorage.setItem("userToken", data.token || ""); 
+        setNotification({ message: data.message, success: data.success, visible: true });
+        localStorage.setItem("userToken", JSON.stringify(data.user)); 
         reset();
+        if (data.success){
+          navigate(`/profile/${data.user.id}`);
+        }
+         // navigate to profile page after successful login
       },
       onError: () => {
-
+        setNotification({ message: "Login failed! Backend might not be running.", success: false, visible: true });
             },
     });
+
+    useEffect(() => {
+      if (notification.visible) {
+        const timer = setTimeout(() => {
+          setNotification((prev) => ({ ...prev, visible: false }));
+        }, 3000);
+        return () => clearTimeout(timer);
+      }
+    }, [notification.visible]);
   
   const onSubmit = (data: LoginFormValues) => {
     mutate(data); // trigger the mutation (send data to backend)
@@ -75,7 +104,11 @@ const LoginForm : React.FC = () => {
         </button>
       </form>
     </div>
-
+    <Notification
+        message={notification.message}
+        success={notification.success}
+        visible={notification.visible}
+      />
     
     </div>
   )

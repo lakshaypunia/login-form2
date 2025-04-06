@@ -1,12 +1,45 @@
-import React from "react";
+import React, { useState } from "react";
 import { Camera, User } from "lucide-react";
-
-interface ProfileProps {
-  name: string;
+import { useParams } from 'react-router-dom';
+import { useEffect } from 'react';
+const backendUrl = import.meta.env.VITE_Backend_URL;
+type User = {
+  fullName: string;
   email: string;
-}
+  // Add more fields as needed
+};
 
-const ProfilePage: React.FC<ProfileProps> = ({ name, email }) => {
+const ProfilePage: React.FC = () => {
+
+  
+  const { id } = useParams<{ id: string }>();
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await fetch(`${backendUrl}api/users/${id}`);
+        const data = await res.json();
+        console.log(data)
+
+        if (data.success) {
+          setUser({email : data.user.email, fullName : data.user.fullName});
+        }
+      } catch (err) {
+        console.error('Error fetching user:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUser();
+  }, [id]);
+
+  if (loading) return <p>Loading...</p>;
+  if (!user) return <p>User not found.</p>;
+
+
   return (
     <div className="w-full bg-white rounded-lg shadow-sm border border-gray-200 ">
       <div className="w-full h-[68px] bg-white p-6">
@@ -30,15 +63,15 @@ const ProfilePage: React.FC<ProfileProps> = ({ name, email }) => {
 
           {/* Name and email */}
           <div className="md:hidden flex flex-col">
-            <h3 className="font-semibold text-base text-gray-900">{name}</h3>
-            <p className="text-sm text-gray-600">{email}</p>
+            <h3 className="font-semibold text-base text-gray-900">{user ? user.fullName : ""}</h3>
+            <p className="text-sm text-gray-600">{user ? user.email : ""}</p>
           </div>
         </div>
 
         {/* Text content (Name, Email, Bio) */}
         <div className="hidden md:flex flex-col">
-          <h3 className="font-semibold text-lg text-gray-900">{name}</h3>
-          <p className="text-sm text-gray-600 mb-3">{email}</p>
+          <h3 className="font-semibold text-lg text-gray-900">{user ? user.fullName : ""}</h3>
+          <p className="text-sm text-gray-600 mb-3">{user ? user.email : ""}</p>
           <p className="text-sm text-gray-500 max-w-md">
             Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod
             tempor invidunt ut labore et dolore magna aliquyam erat, sed diam.
